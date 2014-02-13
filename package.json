@@ -1,0 +1,18 @@
+{
+  "name": "PredictionIoTest",
+  "version": "0.0.0",
+  "description": "Prediction.io test app using Node.js SDK",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Roman Sanine",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "express": "~3.4.8",
+    "jade": "~1.1.5",
+    "nstore": "~0.5.2",
+    "nedb": "~0.10.2",
+    "crypto": "0.0.3"
+  }
+}

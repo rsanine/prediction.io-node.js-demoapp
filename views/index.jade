@@ -1,0 +1,213 @@
+doctype html
+html
+
+  head
+    link(href='http://fonts.googleapis.com/css?family=Raleway:400,200', rel='stylesheet', type='text/css')
+    
+    style.
+      body{
+        padding:0;
+        margin:0;
+        font-family: Raleway;
+        line-height: 2em;
+      }
+      .container{
+        width:600px;
+        margin:30px auto;
+        border:1px solid #DDD;
+      }
+      table{
+        width:100%;
+        margin:0;
+        padding:0;
+        
+        border-collapse:collapse;
+      }
+      
+      td, th{
+        border-collapse:collapse;
+        border-left:1px solid #DDD;
+        vertical-align:top;
+      }
+      th{
+        border-bottom:1px solid #DDD;
+        padding:10px 0;
+      }
+      td:first-child, th:first-child{
+        border-left:none;
+      }
+      
+      
+     
+      
+      ul{
+        list-style:none;
+        padding:0;
+        margin:0;
+        
+      }
+      li{
+        padding:10px;
+        margin:0;
+        border-bottom:1px solid #DDD;
+      }
+      li:last-child{
+      }
+      
+      a{
+        cursor:pointer;
+      }
+      
+      .selected{
+        background-color: #EEEEFF;
+      }
+      
+      .square, label, input, button, .btn {
+        font-size: inherit;
+        padding: 0.2em 0.4em;
+        margin:0;
+        /* the following ensures they're all using the same box-model for rendering */
+        -moz-box-sizing: border-box; /* or `border-box` */
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        border-radius:2px;
+        width:100%;
+      } 
+      .square{
+        height:20px;
+        width:20px;
+        padding-right:20px;
+      }
+      
+      
+      .btn, input{
+        border: 1px solid #DDD;
+      }
+  body
+    .container
+    
+      table
+        tr
+          div
+            th(style="width:33%;")
+              | Users
+              input.newUserName
+              a.btn(onclick="addUser();") +
+              
+            th(style="width:33%;") 
+              | Colors 
+              a.btn(onclick="addItem();") +
+            th(style="width:33%;") Recommendations
+            
+        tr
+          td
+            div(style="height:400px; overflow:auto;")
+              
+              ul.userList
+                - each u in users
+                  li.user(id="u_#{u._id}")
+                    a.btn(onclick="selectUser('#{u._id}');") #{u.name}
+              
+            
+          td
+            div(style="height:400px; overflow:auto;")
+              
+              ul.itemList
+                - each i in items
+                  li.item(id="i_#{i._id}")
+                    span.square(style="background-color:\##{i.color};")
+                    | &nbsp;&nbsp;&nbsp;
+                    a.btn(onclick="likeItem('#{i._id}');") like
+            
+                  
+          td
+            div(style="height:400px; overflow:auto;")
+              ul.recList
+              
+            
+      
+      
+    
+    
+    
+    script(src="http://code.jquery.com/jquery-1.11.0.min.js")
+    script.
+      var curr_userId = 0;
+      
+      function selectUser(userId){
+        curr_userId = userId;
+        loadRecs(userId);
+        
+        $(".user").removeClass("selected");
+        $("#u_"+userId).addClass("selected");
+        
+        getLikes();
+      }
+      
+      function likeItem(itemId){
+        var userId = curr_userId;
+        
+        // send off the like request
+        $.ajax({
+          url:"/users/"+userId+"/like/"+itemId,
+          type: "GET",
+          success: function(data){
+            $(".item#i_"+itemId).addClass("selected");
+            console.log(data);
+          },
+          dataType: "json",
+        });
+      }
+      
+      function loadRecs(userId){
+      
+        // request recommendations
+        $.ajax({
+          
+          url:"/users/"+userId+"/recommend",
+          type: "GET",
+          success: function(data){
+            // add them to ui
+            console.log(data);
+          },
+          dataType: "json",
+        });
+      }
+      
+      function addUser(){
+        var name = $(".newUserName").val();
+        
+        $.ajax({
+          url:"/users/add",
+          data: {
+            name: name
+          },
+          success:function(){
+            window.location.reload();
+          }
+        });
+      }
+      
+      function getLikes(){
+        
+        $.ajax({
+          url: "/users/"+curr_userId+"/likes",
+          success: function(data){
+            $(".item ").removeClass("selected");
+            
+            for(i in data){
+              $(".item#i_"+data[i].itemId).addClass("selected");
+            }
+          }
+        })
+      }
+      
+      function addItem(){
+        
+        $.ajax({
+          url:"/items/add",
+          success:function(){
+            window.location.reload();
+          }
+        });
+      }
