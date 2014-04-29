@@ -9,12 +9,8 @@ var util =            require('util');
 var pio =             require('predictionio');
 var express =         require('express');
 var uuid =            require('node-uuid');
-//var MemoryStore =     express.session.MemoryStore;
 var Datastore =       require('nedb');
 var crypto =          require('crypto');
-
-
-
 
 
 // storage
@@ -23,25 +19,16 @@ db.users = new Datastore('db/users.db');
 db.items = new Datastore('db/items.db');
 db.likes = new Datastore('db/likes.db');
 
-// You need to load each database (here we do it asynchronously)
+// You need to load each database asynchronously
 db.users.loadDatabase();
 db.items.loadDatabase();
 db.likes.loadDatabase();
-
-
-
-
 
 // predictionio init
 var prediction = require('predictionio')({
     key: PIO_APP_KEY,
     baseUrl: PIO_URL,
 });
-
-
-
-
-
 
 // express
 var app = express();
@@ -58,18 +45,13 @@ app.use(express.static(__dirname+'/public'));
 app.use(express.bodyParser());
 app.use(app.router);
 
-
-
-
-
-
-
-
 // home
 app.get("/", function(req, res){
 
+  // load stuff from database
   db.users.find({}, function(err, users){
     db.items.find({}, function(err, items){
+      // render the webapp
       res.render("index", {
         users: users,
         items: items,
@@ -79,12 +61,11 @@ app.get("/", function(req, res){
 });
 
 
-
-// NEED IDSSSSSSSSSSS FOR REMOVAL
-// clear
+// Clear database
+// better way is to just delete files in ./db/ and restart
 app.get("/clear", function(req, res){
 
-
+  //remove
   db.items.remove({}, function (err, numRemoved) {
     console.log("Removed "+numRemoved+" items");
 
@@ -95,14 +76,11 @@ app.get("/clear", function(req, res){
         console.log("Removed "+numRemoved+" likes");
         res.json({message: "Done."});
       });
-      
     });
-   
-
   });
-
 });
 
+// Get user likes (current)
 app.get("/users/:userId/likes", function(req, res){
   var userId = req.params.userId;
   
@@ -111,7 +89,7 @@ app.get("/users/:userId/likes", function(req, res){
   });
 });
 
-
+// add a user
 app.get("/users/add", function(req, res){
   var name = req.query.name;
   
@@ -125,6 +103,7 @@ app.get("/users/add", function(req, res){
     console.log(doc);
     console.log("--------------------");
     
+    // PIO - CREATE USER
     prediction.users.create({
       pio_uid:          doc._id,
       pio_inactive:     false,
@@ -139,18 +118,17 @@ app.get("/users/add", function(req, res){
           message: util.format("Added user %j", doc),
       });
     });
-  
   });
-
 });
 
+// add an item
 app.get("/items/add",function(req, res){
 
   crypto.pseudoRandomBytes(3, function(err, buf){
     var color = buf.toString('hex');
     console.log(color);
     
-     // add user to DB
+    // add user to DB
     db.items.insert(
       {
         color: color
@@ -160,6 +138,7 @@ app.get("/items/add",function(req, res){
       console.log(doc);
       console.log("--------------------");
       
+      // PIO - CREATE ITEM
       prediction.items.create({
         pio_iid: doc._id,
         pio_itypes: 'Beep, Boop, Boom',
@@ -178,56 +157,47 @@ app.get("/items/add",function(req, res){
             message: util.format("Added user %j", doc),
         });
       });
-
     });
-    
   });
-  
- 
-
 });
 
 
-
-// user likes something
+// user likes something -- add the relationship
 app.get("/users/:userId/like/:itemId", function(req, res){
 
-    var userId = req.params.userId;
-    var itemId = req.params.itemId;
-    var customOptions = {};
+  var userId = req.params.userId;
+  var itemId = req.params.itemId;
+  var customOptions = {};
 
-    db.likes.find({userId:userId, itemId:itemId}, function(err, docs){
-      if(docs.length < 1){
-        db.likes.insert({
-          userId:userId,
-          itemId:itemId,
-        }, function(err, doc){
-          console.log(doc);
-          
-          prediction.users.createAction({
-              pio_engine:       PIO_ENGINE, 
-              pio_uid:          userId, 
-              pio_iid:          itemId,
-              pio_action:       'rate',
-              pio_rate:         '5',
-              pio_latlng:       '0,0',
-              pio_t:            Date.now(),
-              pio_any_string:   'Test',
-          }, function (err, response) {
-              console.log("== LIKE ==");
-              console.log(err, response);
-              console.log("==========");
-              res.json({
-                  message: util.format("User %s liked item %s", userId, itemId),
-              });
+  db.likes.find({userId:userId, itemId:itemId}, function(err, docs){
+    if(docs.length < 1){
+      db.likes.insert({
+        userId:userId,
+        itemId:itemId,
+      }, function(err, doc){
+        console.log(doc);
+      
+        // PIO - NEW ACTION
+        prediction.users.createAction({
+          pio_engine:       PIO_ENGINE, 
+          pio_uid:          userId, 
+          pio_iid:          itemId,
+          pio_action:       'rate',
+          pio_rate:         '5',
+          pio_latlng:       '0,0',
+          pio_t:            Date.now(),
+          pio_any_string:   'Test',
+        }, function (err, response) {
+          console.log("== LIKE ==");
+          console.log(err, response);
+          console.log("==========");
+          res.json({
+              message: util.format("User %s liked item %s", userId, itemId),
           });
         });
-      }
-    });
-    
-   
-    
-   
+      });
+    }
+  });
 });
 
 // get recommendations
@@ -236,19 +206,19 @@ app.get("/users/:userId/recommend", function(req, res){
     var userId = req.params.userId;
     
     prediction.items.recommendation({
-        pio_engine:     PIO_ENGINE,
-        pio_uid:        userId,
-        pio_n:           4,
-        pio_itypes:     'color',
-        pio_latlng:     '0,0',
-        pio_within:     '',
-        pio_unit:       '',
-        pio_attributes: '',
+      pio_engine:     PIO_ENGINE,
+      pio_uid:        userId,
+      pio_n:           4,
+      pio_itypes:     'color',
+      pio_latlng:     '0,0',
+      pio_within:     '',
+      pio_unit:       '',
+      pio_attributes: '',
     }, function (err, result) {
-        console.log("== RECOMMEND ==");
-        console.log(err, result);
-        console.log("===============");
-        res.json(result);
+      console.log("== RECOMMEND ==");
+      console.log(err, result);
+      console.log("===============");
+      res.json(result);
     });
 });
 

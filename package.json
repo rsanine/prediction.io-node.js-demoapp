@@ -12,7 +12,8 @@
     "express": "~3.4.8",
     "jade": "~1.1.5",
     "nstore": "~0.5.2",
-    "nedb": "~0.10.2",
-    "crypto": "0.0.3"
+    "crypto": "0.0.3",
+    "predictionio": "0.0.7",
+    "node-uuid": "~1.4.1"
   }
 }
