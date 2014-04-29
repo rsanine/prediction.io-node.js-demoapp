@@ -24,7 +24,6 @@ Install the demo app
     node index
   ```
 8. Open your browser to `` http://localhost:7676  ``
-9. 
 
 
 
