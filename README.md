@@ -1,4 +1,4 @@
-prediction.io-node.js-demoapp
+Node.js demo app for Node.js
 =============================
 
 A demo app that uses Prediction.io node.js SDK.
@@ -24,3 +24,9 @@ How to use this Demo App.
     node index
   ```
 8. Open your browser to `` http://localhost:7676  ``
+
+
+
+--------
+
+Built during UCOSP 2014 http://ucosp.ca/
